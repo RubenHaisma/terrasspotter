@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  password      String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  spots         Spot[]    @relation("OwnerSpots")
+  bookings      Booking[] @relation("BuyerBookings")
+  messages      Message[]
+  profileImage  String?
+  phoneNumber   String?
+  rating        Float?    @default(0)
+  reviewCount   Int       @default(0)
+}
+
+model Spot {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  price       Float
+  latitude    Float
+  longitude   Float
+  status      SpotStatus @default(AVAILABLE)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  ownerId     String
+  owner       User      @relation("OwnerSpots", fields: [ownerId], references: [id])
+  bookings    Booking[]
+  images      String[]
+  address     String
+  capacity    Int       @default(1)
+}
+
+model Booking {
+  id        String   @id @default(cuid())
+  spotId    String
+  buyerId   String
+  status    BookingStatus @default(PENDING)
+  price     Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  spot      Spot     @relation(fields: [spotId], references: [id])
+  buyer     User     @relation("BuyerBookings", fields: [buyerId], references: [id])
+  messages  Message[]
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  userId    String
+  bookingId String
+  user      User     @relation(fields: [userId], references: [id])
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+}
+
+enum SpotStatus {
+  AVAILABLE
+  RESERVED
+  SOLD
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
