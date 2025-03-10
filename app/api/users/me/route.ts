@@ -1,8 +1,10 @@
+// app/api/users/me/route.ts
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+// Explicitly export GET handler
+export const GET = async () => {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -22,10 +24,10 @@ export async function GET() {
         _count: {
           select: {
             spots: true,
-            bookings: true
-          }
-        }
-      }
+            bookings: true,
+          },
+        },
+      },
     });
 
     return NextResponse.json(user);
@@ -35,9 +37,10 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+};
 
-export async function PATCH(req: Request) {
+// Explicitly export PATCH handler
+export const PATCH = async (req: Request) => {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -51,7 +54,7 @@ export async function PATCH(req: Request) {
       where: { id: session.user.id },
       data: {
         name,
-        phoneNumber
+        phoneNumber,
       },
       select: {
         id: true,
@@ -59,8 +62,8 @@ export async function PATCH(req: Request) {
         email: true,
         phoneNumber: true,
         rating: true,
-        reviewCount: true
-      }
+        reviewCount: true,
+      },
     });
 
     return NextResponse.json(user);
@@ -70,4 +73,4 @@ export async function PATCH(req: Request) {
       { status: 500 }
     );
   }
-}
+};

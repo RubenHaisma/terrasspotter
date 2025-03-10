@@ -1,8 +1,10 @@
+// app/api/bookings/route.ts
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-export async function POST(req: Request) {
+// Explicitly export POST handler
+export const POST = async (req: Request) => {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -13,14 +15,11 @@ export async function POST(req: Request) {
     const { spotId, price } = body;
 
     const spot = await prisma.spot.findUnique({
-      where: { id: spotId }
+      where: { id: spotId },
     });
 
     if (!spot) {
-      return NextResponse.json(
-        { error: "Spot not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: "Spot not found" }, { status: 404 });
     }
 
     if (spot.status !== "AVAILABLE") {
@@ -35,12 +34,12 @@ export async function POST(req: Request) {
         spotId,
         buyerId: session.user.id,
         price: parseFloat(price),
-      }
+      },
     });
 
     await prisma.spot.update({
       where: { id: spotId },
-      data: { status: "RESERVED" }
+      data: { status: "RESERVED" },
     });
 
     return NextResponse.json(booking, { status: 201 });
@@ -50,9 +49,10 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-}
+};
 
-export async function GET(req: Request) {
+// Explicitly export GET handler
+export const GET = async (req: Request) => {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -61,11 +61,11 @@ export async function GET(req: Request) {
 
     const bookings = await prisma.booking.findMany({
       where: {
-        buyerId: session.user.id
+        buyerId: session.user.id,
       },
       include: {
-        spot: true
-      }
+        spot: true,
+      },
     });
 
     return NextResponse.json(bookings);
@@ -75,4 +75,4 @@ export async function GET(req: Request) {
       { status: 500 }
     );
   }
-}
+};

@@ -1,41 +1,27 @@
+// app/api/spots/route.ts
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-export async function POST(req: Request) {
-  try {
-    const session = await auth();
-    
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    const body = await req.json();
-    const { title, description, price, latitude, longitude, address, capacity } = body;
-
-    const spot = await prisma.spot.create({
-      data: {
-        title,
-        description,
-        price: parseFloat(price),
-        latitude: parseFloat(latitude),
-        longitude: parseFloat(longitude),
-        address,
-        capacity: parseInt(capacity),
-        ownerId: session.user.id,
-      }
-    });
-
-    return NextResponse.json(spot, { status: 201 });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Error creating spot" },
-      { status: 500 }
-    );
-  }
+// Define the type for the raw query result
+interface RawSpot {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  latitude: number;
+  longitude: number;
+  address: string;
+  capacity: number;
+  ownerId: string;
+  status: string;
+  ownerName: string;
+  ownerRating: number | null;
+  ownerReviewCount: number;
 }
 
-export async function GET(req: Request) {
+// Explicitly export GET handler
+export const GET = async (req: Request) => {
   try {
     const { searchParams } = new URL(req.url);
     const latitude = searchParams.get("latitude");
@@ -44,7 +30,7 @@ export async function GET(req: Request) {
 
     let spots;
     if (latitude && longitude) {
-      spots = await prisma.$queryRaw`
+      spots = await prisma.$queryRaw<RawSpot[]>`
         SELECT s.*, 
           u.name as "ownerName", 
           u.rating as "ownerRating", 
@@ -57,7 +43,7 @@ export async function GET(req: Request) {
         ORDER BY earth_distance(ll_to_earth(${parseFloat(latitude)}, ${parseFloat(longitude)}), ll_to_earth(s.latitude, s.longitude))
       `;
 
-      spots = spots.map((spot: any) => ({
+      spots = spots.map((spot: { ownerName: any; ownerRating: any; ownerReviewCount: any; }) => ({
         ...spot,
         owner: {
           name: spot.ownerName,
@@ -89,4 +75,38 @@ export async function GET(req: Request) {
       { status: 500 }
     );
   }
-}
+};
+
+// Explicitly export POST handler
+export const POST = async (req: Request) => {
+  try {
+    const session = await auth();
+    
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json();
+    const { title, description, price, latitude, longitude, address, capacity } = body;
+
+    const spot = await prisma.spot.create({
+      data: {
+        title,
+        description,
+        price: parseFloat(price),
+        latitude: parseFloat(latitude),
+        longitude: parseFloat(longitude),
+        address,
+        capacity: parseInt(capacity),
+        ownerId: session.user.id,
+      }
+    });
+
+    return NextResponse.json(spot, { status: 201 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Error creating spot" },
+      { status: 500 }
+    );
+  }
+};

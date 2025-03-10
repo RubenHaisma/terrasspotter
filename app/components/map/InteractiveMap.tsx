@@ -116,7 +116,7 @@ export default function InteractiveMap() {
         mapStyle="mapbox://styles/mapbox/light-v11"
         mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_TOKEN}
         onClick={handleMapClick}
-        className="w-full h-full"
+        style={{ width: '100%', height: '100%' }}
       >
         <NavigationControl position="top-right" />
         <GeolocateControl

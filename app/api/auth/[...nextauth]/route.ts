@@ -1,3 +1,4 @@
+// app/api/auth/[...nextauth]/route.ts
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
@@ -5,7 +6,8 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import NextAuth from "next-auth/next";
 
-export const authOptions: NextAuthOptions = {
+// Define auth options (don't export this)
+const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     CredentialsProvider({
@@ -56,6 +58,6 @@ export const authOptions: NextAuthOptions = {
   },
 };
 
+// Create and export the handlers
 const handler = NextAuth(authOptions);
-
 export { handler as GET, handler as POST };

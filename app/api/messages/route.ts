@@ -1,8 +1,10 @@
+// app/api/messages/route.ts
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-export async function POST(req: Request) {
+// Explicitly export POST handler
+export const POST = async (req: Request) => {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -16,16 +18,16 @@ export async function POST(req: Request) {
       data: {
         content,
         bookingId,
-        userId: session.user.id
+        userId: session.user.id,
       },
       include: {
         user: {
           select: {
             name: true,
-            email: true
-          }
-        }
-      }
+            email: true,
+          },
+        },
+      },
     });
 
     return NextResponse.json(message, { status: 201 });
@@ -35,9 +37,10 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-}
+};
 
-export async function GET(req: Request) {
+// Explicitly export GET handler
+export const GET = async (req: Request) => {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -56,19 +59,19 @@ export async function GET(req: Request) {
 
     const messages = await prisma.message.findMany({
       where: {
-        bookingId
+        bookingId,
       },
       include: {
         user: {
           select: {
             name: true,
-            email: true
-          }
-        }
+            email: true,
+          },
+        },
       },
       orderBy: {
-        createdAt: 'asc'
-      }
+        createdAt: "asc",
+      },
     });
 
     return NextResponse.json(messages);
@@ -78,4 +81,4 @@ export async function GET(req: Request) {
       { status: 500 }
     );
   }
-}
+};

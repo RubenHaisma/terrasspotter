@@ -24,6 +24,22 @@ model User {
   phoneNumber   String?
   rating        Float?    @default(0)
   reviewCount   Int       @default(0)
+  notifications Notification[]
+  reviews       Review[]  @relation("UserReviews")
+  reviewsGiven  Review[]  @relation("ReviewsGiven")
+  settings      UserSettings?
+}
+
+model UserSettings {
+  id                    String  @id @default(cuid())
+  userId                String  @unique
+  user                  User    @relation(fields: [userId], references: [id])
+  emailNotifications    Boolean @default(true)
+  pushNotifications     Boolean @default(true)
+  bookingReminders      Boolean @default(true)
+  marketingPreferences  Boolean @default(false)
+  language             String  @default("nl")
+  currency             String  @default("EUR")
 }
 
 model Spot {
@@ -42,19 +58,27 @@ model Spot {
   images      String[]
   address     String
   capacity    Int       @default(1)
+  amenities   String[]
+  reviews     Review[]
+  rating      Float     @default(0)
+  reviewCount Int       @default(0)
+  tags        String[]
 }
 
 model Booking {
-  id        String   @id @default(cuid())
-  spotId    String
-  buyerId   String
-  status    BookingStatus @default(PENDING)
-  price     Float
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  spot      Spot     @relation(fields: [spotId], references: [id])
-  buyer     User     @relation("BuyerBookings", fields: [buyerId], references: [id])
-  messages  Message[]
+  id          String   @id @default(cuid())
+  spotId      String
+  buyerId     String
+  status      BookingStatus @default(PENDING)
+  price       Float
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  startTime   DateTime?
+  endTime     DateTime?
+  spot        Spot     @relation(fields: [spotId], references: [id])
+  buyer       User     @relation("BuyerBookings", fields: [buyerId], references: [id])
+  messages    Message[]
+  review      Review?
 }
 
 model Message {
@@ -65,6 +89,35 @@ model Message {
   bookingId String
   user      User     @relation(fields: [userId], references: [id])
   booking   Booking  @relation(fields: [bookingId], references: [id])
+  read      Boolean  @default(false)
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Float
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  spotId    String
+  bookingId String   @unique
+  user      User     @relation("UserReviews", fields: [userId], references: [id])
+  reviewer  User     @relation("ReviewsGiven", fields: [reviewerId], references: [id])
+  reviewerId String
+  spot      Spot     @relation(fields: [spotId], references: [id])
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  type      NotificationType
+  title     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  metadata  Json?
 }
 
 enum SpotStatus {
@@ -78,4 +131,14 @@ enum BookingStatus {
   CONFIRMED
   COMPLETED
   CANCELLED
+}
+
+enum NotificationType {
+  BOOKING_REQUEST
+  BOOKING_CONFIRMED
+  BOOKING_CANCELLED
+  NEW_MESSAGE
+  REVIEW_RECEIVED
+  PAYMENT_RECEIVED
+  SYSTEM
 }

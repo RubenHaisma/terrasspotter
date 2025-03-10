@@ -1,4 +1,5 @@
-import type { NextAuthConfig } from "next-auth"
+// auth.config.ts (for v4)
+import type { NextAuthOptions } from "next-auth" // For v4
 import Credentials from "next-auth/providers/credentials"
 import { LoginSchema } from "@/schemas"
 import bcrypt from "bcryptjs"
@@ -7,29 +8,43 @@ import { getUserByEmail } from "@/data/user"
 export default {
   providers: [
     Credentials({
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
       async authorize(credentials) {
-        const validatedFields = LoginSchema.safeParse(credentials)
-
-        if (validatedFields.success) {
-          const { email, password } = validatedFields.data
-
-          const user = await getUserByEmail(email)
-          if (!user || !user.password) return null
-
-          const passwordsMatch = await bcrypt.compare(
-            password,
-            user.password
-          )
-
-          if (passwordsMatch) return user
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("Invalid credentials")
         }
 
-        return null
-      }
-    })
+        const user = await getUserByEmail(credentials.email)
+
+        if (!user || !user?.password) {
+          throw new Error("Invalid credentials")
+        }
+
+        const isCorrectPassword = await bcrypt.compare(
+          credentials.password,
+          user.password
+        )
+
+        if (!isCorrectPassword) {
+          throw new Error("Invalid credentials")
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+        }
+      },
+    }),
   ],
   pages: {
     signIn: "/auth/login",
     error: "/auth/error",
   },
-} satisfies NextAuthConfig
+  session: { strategy: "jwt" },
+  secret: process.env.NEXTAUTH_SECRET,
+} satisfies NextAuthOptions
